@@ -1,12 +1,12 @@
 #include "vex.h"
-#include <cmath>
+#include <cmath> 
 #include <string>
-#include <list>
-#include <iterator>
+#include <list> 
+#include <iterator> 
 using namespace vex;
- 
- 
- 
+
+
+
 // /*----------------------------------------------------------------------------*/
 // /*                                                                            */
 // /*    Module:       main.cpp                                                  */
@@ -16,12 +16,12 @@ using namespace vex;
 // /*                                                                            */
 // /*----------------------------------------------------------------------------*/
 // #include "vex.h"
-//
+// 
 // // ---- START VEXCODE CONFIGURED DEVICES ----
 // // Robot Configuration:
 // // [Name]               [Type]        [Port(s)]
 // // ---- END VEXCODE CONFIGURED DEVICES ----
-//
+// 
 using namespace vex;
 vex::competition Competition;
 vex::controller  Controller1;
@@ -33,16 +33,16 @@ vex::motor ChassisLB(vex::PORT2, vex::gearSetting::ratio18_1, false);
 vex::motor ChassisRF(vex::PORT3, vex::gearSetting::ratio18_1, true);
 vex::motor ChassisRB(vex::PORT4, vex::gearSetting::ratio18_1, true);
 //Grabbers
-vex::motor LeftGrabber(vex::PORT7, vex::gearSetting::ratio18_1, true);
-vex::motor RightGrabber(vex::PORT8, vex::gearSetting::ratio18_1, false);
+vex::motor LeftGrabber(vex::PORT7, vex::gearSetting::ratio18_1, true); 
+vex::motor RightGrabber(vex::PORT8, vex::gearSetting::ratio18_1, false); 
 //Misc.
-vex::motor GrabberLift(vex::PORT5, vex::gearSetting::ratio36_1, true);
+vex::motor GrabberLift(vex::PORT5, vex::gearSetting::ratio36_1, true); 
 vex::motor StackMotor(vex::PORT6, vex::gearSetting::ratio36_1, true); //is actually 36_1, programmed as 6_1 for slower speeds
  
 //---------------------------------------------------------------------------------------------------------------
- 
+
 //MISCELLANEOUS SETTERS/DECLARATIONS:
-std::list<std::string> autonRecord;
+std::list<std::string> autonRecord; 
 double outtakeOn = false;
 double chassisMultiplier = .7;
 bool slowModeEnabled = false;
@@ -55,7 +55,7 @@ const int chassisWheelDia = 4; //4in chassis  wheel
 const float ticksPerTurn = 3000; //tbd value through testing
 const float chassisTurningRadius = 6.67; //nearest wheel to the center of the robot, need to be tuned
 const int maxMotorRPM = 200;
- 
+
 //Stack Positioning Values (degrees)
 double stackStartPos = 0.00;
 double stackUnloadPos = 1025.00;
@@ -63,7 +63,7 @@ double moreThanSevenPos = 3000.0; //2428.8;
 double stackCurrentPos;
 bool stackInStart = true;
 bool stackInUnload = false;
- 
+
 //Grabber Positioning Values (degrees)
 double bottomPos = 0.00;
 double midTowerPos = 560.20;
@@ -72,12 +72,12 @@ double grabberCurrentPos = 0.00;
 bool grabberAtBottom = true;
 bool grabberAtLow = false;
 bool grabberAtMid = false;
- 
+
 double Limit(double val, double max, double min);
- 
+
 //---------------------------------------------------------------------------------------------------------------
- 
- 
+
+
 //CHASSIS SETTERS:
 void chassisPIDMove (double inches);
 void chassis_move_coast(double rotation, int velocity);
@@ -89,12 +89,12 @@ void leftDrive(vex::directionType type, int percentage);
 void rightDrive(vex::directionType type, int percentage);
 void leftSpin(double velocity);
 void rightSpin(double velocity);
- 
- 
-//
+
+
+// 
 // //---------------------------------------------------------------------------------------------------------------
-//
-//
+// 
+// 
 // //CALLBACKS:
 void l1Pressed();
 void l2Pressed();
@@ -113,7 +113,7 @@ void xPressed();
 void yPressed();
 void a1Pressed();
 void b2Pressed();
- 
+
 void chassisControl(){
   if(outtakeOn) {
     leftDrive(vex::directionType::fwd, Controller1.Axis2.value()*chassisMultiplier);
@@ -122,39 +122,39 @@ void chassisControl(){
   else {
     leftDrive(vex::directionType::fwd, Controller1.Axis3.value()*chassisMultiplier);
     rightDrive(vex::directionType::fwd, Controller1.Axis2.value()*chassisMultiplier);
- 
+
   }
   /*
     ChassisLF.spin(vex::directionType::fwd, Controller1.Axis3.value()*chassisMultiplier, vex::velocityUnits::pct);
     ChassisLB.spin(vex::directionType::fwd, Controller1.Axis3.value()*chassisMultiplier, vex::velocityUnits::pct);
     ChassisRF.spin(vex::directionType::fwd, Controller1.Axis2.value()*chassisMultiplier, vex::velocityUnits::pct);
-    ChassisRB.spin(vex::directionType::fwd, Controller1.Axis2.value()*chassisMultiplier, vex::velocityUnits::pct);  
+    ChassisRB.spin(vex::directionType::fwd, Controller1.Axis2.value()*chassisMultiplier, vex::velocityUnits::pct);   
 */}
-//---------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------- 
 //METHODS:
- 
+
 //PID Methods:
 //unit conversion from inches to encoder ticks
 int inch2Tick (float inch) {
   int ticks;
   ticks = inch * encoderTicksPerRev /(chassisWheelDia * pi);
   return ticks;
-}
- 
+} 
+
 //function getting the sign of number
 int signNum (double num){
   if (num < 0) return -1;
   else if (num > 0) return 1;
   else return 0;
 }  
- 
+
 //unit conversion from degree angle to encoder ticks
 //this function requires measurement of # ticks per robot turn
 int degree2Tick (float degree) {//need to measure based on robot
   int ticks = degree * ticksPerTurn/encoderTicksPerRev;
   return ticks;
 }
- 
+
 //unit conversion from degree angle to encoder ticks
 //this function is based on wheel travel trajectory during a turn
 //need fine tune of turningRadius to get correct angle conversion
@@ -162,9 +162,9 @@ int degree2Tick_2 (float degree) {
   float turningCirc = 2 * pi * chassisTurningRadius;
   double ticksPerTurn = inch2Tick(turningCirc);
   int ticks = degree * ticksPerTurn/360;
-  return ticks;
+  return ticks; 
 }
- 
+
 //time delay at the end of a chassis move. Minumum is 250msec regardless what the setting is
 int waitTime_msec (double rawSeconds)   {
   int miliSeconds;
@@ -175,8 +175,8 @@ int waitTime_msec (double rawSeconds)   {
   }
   return miliSeconds;
 }
- 
- 
+
+
 double Limit(double val, double min, double max){
     if(val > max) {
       return max;
@@ -188,7 +188,7 @@ double Limit(double val, double min, double max){
       return val;
     }
 }
- 
+
 //-----------------------------------------------------------
 //Auton Methods
 void backupAuton(void) {
@@ -209,23 +209,23 @@ void backupAuton(void) {
     ChassisRB.rotateFor(directionType::fwd, 2, rotationUnits::rev);
     ChassisLF.rotateFor(directionType::fwd, 2, rotationUnits::rev);
     ChassisRF.rotateFor(directionType::fwd, 2, rotationUnits::rev);
- 
+
 }
 void backAuton(void){
   ChassisLF.setVelocity(200,velocityUnits::rpm);
     ChassisLB.setVelocity(200,velocityUnits::rpm);
     ChassisRB.setVelocity(200,velocityUnits::rpm);
     ChassisRF.setVelocity(200,velocityUnits::rpm);
-   
+    
     ChassisLF.rotateFor(-10,rotationUnits::rev,false);
     ChassisLB.rotateFor(-10,rotationUnits::rev,false);
     ChassisRF.rotateFor(-10,rotationUnits::rev,false);
     ChassisRB.rotateFor(-10,rotationUnits::rev, true);
- 
+
   chassis_move(-100, 200);
   //chassis_move(15, 200);
 }
- 
+
 void flipOut(void) {
   r1Pressed();
   r1PressedAuton(20);
@@ -236,9 +236,10 @@ void flipOut(void) {
   l2Pressed();
   r2Pressed();
   //r2Pressed();
-  chassisPIDMove(24);
+  //chassisPIDMove(24);
   return;
- 
+
+
 }
 void autonomous( void ) {
     flipOut(); //always flip out before auton
@@ -253,7 +254,7 @@ void leftDrive(vex::directionType type, int percentage) {
   str += percentage;
   str += ");";
   autonRecord.push_back(str);
- 
+
   if(percentage >= 0) {
     percentage = 1.2*pow(1.043,percentage) - 1.2 + .2*percentage;
   }
@@ -262,7 +263,7 @@ void leftDrive(vex::directionType type, int percentage) {
     percentage = 1.2*pow(1.043,percentage) - 1.2 + .2*percentage;
     percentage = -percentage;
   }
- 
+
   ChassisLF.spin(type, percentage, velocityUnits::pct);
   ChassisLB.spin(type, percentage, velocityUnits::pct);
 }
@@ -279,11 +280,11 @@ void rightDrive(vex::directionType type, int percentage) {
     percentage = 1.2*pow(1.043,percentage) - 1.2 + .2*percentage;
     percentage = -percentage;
   }
- 
+
   ChassisRF.spin(type, percentage, velocityUnits::pct);
   ChassisRB.spin(type, percentage, velocityUnits::pct);
 }
- 
+
 void chassis_move_for(double rotation, int velocity){
     ChassisLF.setVelocity(velocity,velocityUnits::rpm);
     ChassisLB.setVelocity(velocity,velocityUnits::rpm);
@@ -298,7 +299,7 @@ void chassis_move_for(double rotation, int velocity){
     ChassisRF.rotateFor(rotation,rotationUnits::rev,false);
     ChassisRB.rotateFor(rotation,rotationUnits::rev);
 }
- 
+
 void chassis_move_coast(double rotation, int velocity){
     ChassisLF.setVelocity(velocity,velocityUnits::rpm);
     ChassisLB.setVelocity(velocity,velocityUnits::rpm);
@@ -324,59 +325,59 @@ void chassis_move(double rotation, double velocity){
     ChassisRF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
     ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, true);
 }
- 
+
 void chassis_move_auton(double rotation, int velocity){
     ChassisLF.setVelocity(velocity,velocityUnits::rpm);
     ChassisLB.setVelocity(velocity,velocityUnits::rpm);
     ChassisRB.setVelocity(velocity,velocityUnits::rpm);
     ChassisRF.setVelocity(velocity,velocityUnits::rpm);
- 
+
     ChassisLF.setStopping(vex::brakeType::brake);
     ChassisLB.setStopping(vex::brakeType::brake);
     ChassisRF.setStopping(vex::brakeType::brake);
     ChassisRB.setStopping(vex::brakeType::brake);
-   
+    
 //     ChassisLF.rotateFor(rotation,rotationUnits::rev,false);
     ChassisLB.rotateFor(rotation,rotationUnits::rev,false);
     ChassisRF.rotateFor(rotation,rotationUnits::rev,false);
     ChassisRB.rotateFor(rotation,rotationUnits::rev);
 }
- 
+
 void leftSpin(double velocity) {
   ChassisLF.setVelocity(velocity,velocityUnits::rpm);
   ChassisLB.setVelocity(velocity,velocityUnits::rpm);
- 
+  
   ChassisLF.spin(vex::directionType::fwd);
   ChassisLB.spin(vex::directionType::fwd);
 }
- 
+
 void rightSpin(double velocity) {
   ChassisRF.setVelocity(velocity,velocityUnits::rpm);
   ChassisRB.setVelocity(velocity,velocityUnits::rpm);
- 
+  
   ChassisRF.spin(vex::directionType::fwd);
   ChassisRB.spin(vex::directionType::fwd);
 }
- 
+
 void turn(double rotation, int velocity) {
     ChassisLF.setVelocity(velocity,velocityUnits::rpm);
     ChassisLB.setVelocity(velocity,velocityUnits::rpm);
     ChassisRF.setVelocity(velocity,velocityUnits::rpm);
     ChassisRB.setVelocity(velocity,velocityUnits::rpm);
-   
+    
     ChassisLF.rotateFor(rotation,rotationUnits::rev,false);
     ChassisLB.rotateFor(rotation,rotationUnits::rev,false);
     ChassisRF.rotateFor(-rotation,rotationUnits::rev,false);
     ChassisRB.rotateFor(-rotation,rotationUnits::rev,false);
 }
- 
+
 void chassisStop () {
   ChassisLF.stop(brakeType::brake);
   ChassisLB.stop(brakeType::brake);
   ChassisRF.stop(brakeType::brake);
-  ChassisRB.stop(brakeType::brake);
+  ChassisRB.stop(brakeType::brake); 
 }
- 
+
 //point turn the chassis by all four motors at velocity, positive is clockwise
 void chassisSmallPointTurn (double degree, double velocity) {
   float tick = degree2Tick(degree);
@@ -384,26 +385,26 @@ void chassisSmallPointTurn (double degree, double velocity) {
   ChassisLB.setVelocity(velocity,velocityUnits::rpm);
   ChassisRF.setVelocity(velocity,velocityUnits::rpm);
   ChassisRB.setVelocity(velocity,velocityUnits::rpm);
- 
+
   ChassisLF.rotateFor(tick, rotationUnits::raw, false);
   ChassisLB.rotateFor(tick, rotationUnits::raw, false);
   ChassisRF.rotateFor(-tick, rotationUnits::raw, false);
-  ChassisRB.rotateFor(-tick, rotationUnits::raw, true);  
+  ChassisRB.rotateFor(-tick, rotationUnits::raw, true);   
 }
 //positive is clockwise
 void chassisPointTurn(double velocity) {
-   
+    
   ChassisLF.setVelocity(velocity,velocityUnits::rpm);
   ChassisLB.setVelocity(velocity,velocityUnits::rpm);
   ChassisRF.setVelocity(-velocity,velocityUnits::rpm);
   ChassisRB.setVelocity(-velocity,velocityUnits::rpm);
- 
+  
   ChassisLF.spin(directionType::fwd);
   ChassisLB.spin(directionType::fwd);
   ChassisRF.spin(directionType::fwd);
   ChassisRB.spin(directionType::fwd);  
 }
- 
+
 //Chassis encoder reset
 void chassisEncoderReset() {
   ChassisLF.resetRotation();
@@ -411,8 +412,8 @@ void chassisEncoderReset() {
   ChassisRF.resetRotation();
   ChassisRB.resetRotation();  
 }
- 
- 
+
+
 void slowMode() {
   slowModeEnabled = !slowModeEnabled;
   if(slowModeEnabled == false) {
@@ -422,16 +423,16 @@ void slowMode() {
     chassisMultiplier = .17;
   }
 }
- 
+
 /*------------------------------------PID Control Move and Turn----------------------------------------*/
- 
+
 void setChassisLSmooth(int speed){
   double inertia = 0.5;
   static int currentSpeed = 0;
   currentSpeed = inertia * currentSpeed + (1 - inertia) * speed;
   leftSpin(currentSpeed);
 }
- 
+
 void setChassisRSmooth(int speed){
    double inertia = 0.5;
    static int currentSpeed = 0;
@@ -499,7 +500,7 @@ void setChassisRSmooth(int speed){
      
    }
  }
- 
+
 //-----------------------------------------------------------
 //Button Methods
 void upPressed() {
@@ -517,14 +518,14 @@ void upPressed() {
     vex::task::sleep(1000);
     LeftGrabber.stop(hold);
     RightGrabber.stop(hold);
- 
+
     return;
   }
   else { //FILL IN ELSE CASE NOW BEFORE YOU DO ANYTHING ELSE
     return;
   }
 }
- 
+
 void downPressed() {
   autonRecord.push_back( "downPressed();");
   stackCurrentPos = StackMotor.rotation(rotationUnits::deg);
@@ -540,9 +541,9 @@ void downPressed() {
   else { //FILL IN ELSE CASE NOW BEFORE YOU DO ANYTHING ELSE
     return;
   }
- 
+  
 }
- 
+
 void leftPressed() {
   autonRecord.push_back( "leftPressed();");
   stackCurrentPos = StackMotor.rotation(rotationUnits::deg);
@@ -559,7 +560,7 @@ void leftPressed() {
     return;
   }
 }
- 
+
 void rightPressed() {
   autonRecord.push_back( "rightPressed();");
   if(RevGrabberStop) {
@@ -567,11 +568,11 @@ void rightPressed() {
     RightGrabber.spin(directionType::fwd, 15, velocityUnits::pct);  
     Controller1.Screen.clearScreen();
     Controller1.Screen.setCursor(1,1);
-    Controller1.Screen.print("SLOW OUTTAKE ON");
+    Controller1.Screen.print("SLOW OUTTAKE ON"); 
     RevGrabberStop = false;
     FwdGrabberStop = true;
     outtakeOn = true;
-  }
+  } 
   else {
     LeftGrabber.stop(brakeType::hold);
     RightGrabber.stop(brakeType::hold);
@@ -582,7 +583,7 @@ void rightPressed() {
     outtakeOn = false;
   }
 }
- 
+
 void xPressed() { //outtake macro
   autonRecord.push_back( "xPressed();");
   downPressed();
@@ -594,16 +595,16 @@ void xPressed() { //outtake macro
 void yPressed(){
   autonRecord.push_back( "yPressed();");
 }
- 
+
 void aPressed() {
     autonRecord.push_back( "aPressed();");
     slowMode();
 }
- 
+
 void bPressed() {
   autonomous();
 }
- 
+
 void l1Pressed(){
   autonRecord.push_back( "l1Pressed();");
   if(FwdGrabberStop) {
@@ -617,9 +618,9 @@ void l1Pressed(){
     RightGrabber.stop(brakeType::hold);
     FwdGrabberStop = true;
   }
- 
+  
 }
- 
+
 void l2Pressed(){
   autonRecord.push_back( "l2Pressed();");
   if(RevGrabberStop) {
@@ -627,15 +628,15 @@ void l2Pressed(){
     RightGrabber.spin(directionType::fwd, 75, velocityUnits::pct);      
     RevGrabberStop = false;
     FwdGrabberStop = true;
-  }
+  } 
   else {
     LeftGrabber.stop(brakeType::hold);
     RightGrabber.stop(brakeType::hold);
     RevGrabberStop = true;
   }
- 
+  
 }
- 
+
 void r1Pressed(){
   autonRecord.push_back( "r1Pressed();");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
@@ -660,7 +661,7 @@ void r1Pressed(){
     return;
   }
 }
- 
+
 void r1PressedAuton(double extra){
   autonRecord.push_back( "r1PressedAuton(extra);");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
@@ -685,7 +686,7 @@ void r1PressedAuton(double extra){
     return;
   }
 }
- 
+
 void r2Pressed(){
   autonRecord.push_back( "r2Pressed();");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
@@ -712,14 +713,14 @@ void r2Pressed(){
 }
 //-----------------------------------------------------------
 //Button Test Methods
- 
+
 void l1PressedTest(){
- 
+  
 }
 void l2PressedTest(){
- 
+  
 }
- 
+
 void r1PressedTest(){
   StackMotor.spin(vex::directionType::fwd, 50, velocityUnits::rpm);
   vex::task::sleep(500);
@@ -730,35 +731,35 @@ void r2PressedTest(){
   vex::task::sleep(500);
   StackMotor.stop(hold);
 }
- 
+
 //Program-Specific Methods
 void pre_auton( void ) {
- 
+
 }
- 
- 
- 
+
+
+
 void usercontrol( void ) {
   // User control code here, inside the loop
   while (1) {
     Brain.Screen.clearScreen();
     Brain.Screen.setCursor(1,1);
     Brain.Screen.print(StackMotor.rotation(rotationUnits::deg));
-    vex::task::sleep(20); //Sleep the task for a short amount of time to prevent wasted resources.
+    vex::task::sleep(20); //Sleep the task for a short amount of time to prevent wasted resources. 
   }
 }
- 
+
 //--------------------------------------------------------------------------------------------------------------
- 
- 
+
+
 int main() {
     vexcodeInit();
     //Set up callbacks for autonomous and driver control periods.
     Competition.autonomous(autonomous);
     Competition.drivercontrol(usercontrol);
     pre_auton();
- 
- 
+
+
     //Callbacks
     Controller1.ButtonL1.pressed(*l1Pressed);
     Controller1.ButtonL2.pressed(*l2Pressed);
@@ -774,11 +775,11 @@ int main() {
     Controller1.ButtonB.pressed(*bPressed);
     Controller1.Axis2.changed(*chassisControl);
     Controller1.Axis3.changed(*chassisControl);
- 
+
     //Prevent main from exiting with an infinite loop.                        
     while(1) {
       chassisControl();
-     
+      
       vex::task::sleep(100);//Sleep the task for a short amount of time to prevent wasted resources.
     }
 }

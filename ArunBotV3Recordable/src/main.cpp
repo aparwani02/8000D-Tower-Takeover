@@ -1,4 +1,5 @@
 #include "vex.h"
+#include "vex_motor.h"
 #include <cmath> 
 #include <string>
 #include <list> 
@@ -56,9 +57,15 @@ const float ticksPerTurn = 3000; //tbd value through testing
 const float chassisTurningRadius = 6.67; //nearest wheel to the center of the robot, need to be tuned
 const int maxMotorRPM = 200;
 
+const int wheelRadius = 2; //in inches
+const int wheelCircumference = 2*wheelRadius*pi; //in inches
+const double turningRadius = 5.5;// in inches, distance from center of robot to center of wheel
+
+
+
 //Stack Positioning Values (degrees)
 double stackStartPos = 0.00;
-double stackUnloadPos = 1025.00;
+double stackUnloadPos = 1000.00; //was 1025
 double moreThanSevenPos = 3000.0; //2428.8;
 double stackCurrentPos;
 bool stackInStart = true;
@@ -81,10 +88,10 @@ double Limit(double val, double max, double min);
 //CHASSIS SETTERS:
 void chassisPIDMove (double inches);
 void chassis_move_coast(double rotation, int velocity);
-void chassis_move(double rotation,double velocity);
+void chassis_move(double distance,double velocity);
 void chassis_move_for(double rotation, int velocity);
 void chassis_move_auton(double rotation, int velocity);
-void turn(double rotation,int velocity);
+void turn(double degrees,int velocity);
 void leftDrive(vex::directionType type, int percentage);
 void rightDrive(vex::directionType type, int percentage);
 void leftSpin(double velocity);
@@ -222,28 +229,57 @@ void backAuton(void){
     ChassisRF.rotateFor(-10,rotationUnits::rev,false);
     ChassisRB.rotateFor(-10,rotationUnits::rev, true);
 
-  chassis_move(-100, 200);
+  //chassis_move(-100, 200);
   //chassis_move(15, 200);
 }
 
 void flipOut(void) {
   r1Pressed();
-  r1PressedAuton(20);
-  //r1Pressed();
   l2Pressed();
+  r1Pressed();
+  //r1PressedAuton(20);
+  //r1Pressed();
   vex::task::sleep(500);
   r2Pressed();
-  l2Pressed();
+  l1Pressed();
   r2Pressed();
   //r2Pressed();
   //chassisPIDMove(24);
   return;
+}
 
-
+void fourCubes(void) {
+  
+  chassisPIDMove(-10);//pick up the four cubes
+  vex::task::sleep(1000);
+  chassisPIDMove(20);
+  
 }
 void autonomous( void ) {
-    flipOut(); //always flip out before auton
+    //flipOut(); //always flip out before auton
+    //chassisPIDMove(8*pi);
+    //fourCubes();
     //backAuton();
+    l1Pressed();
+    chassis_move(39, 40); //distance was 35
+    rightPressed();
+    vex::task::sleep(470); //was 500
+    rightPressed();
+    vex::task::sleep(60);
+    //chassis_move(-10, 20);
+    turn(-145, 30); //was -147
+    chassis_move(38, 40);
+    upPressed();
+    if(stackInUnload) {
+      xPressed();
+    }
+    /*
+    leftSpin(75);
+    rightSpin(75);
+    vex::task::sleep(1000);
+        leftSpin(0);
+    rightSpin(0);
+    */
     //smallSideAuton();
     //backupAuton();
 }
@@ -314,16 +350,13 @@ void chassis_move_coast(double rotation, int velocity){
     ChassisRF.rotateFor(rotation,rotationUnits::rev,false);
     ChassisRB.rotateFor(rotation,rotationUnits::rev);
 }
-void chassis_move(double rotation, double velocity){
-    /*ChassisLF.setVelocity(velocity,velocityUnits::rpm);
-    ChassisLB.setVelocity(velocity,velocityUnits::rpm);
-    ChassisRB.setVelocity(velocity,velocityUnits::rpm);
-    ChassisRF.setVelocity(velocity,velocityUnits::rpm);
-    */
-    ChassisLF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
-    ChassisLB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
-    ChassisRF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
-    ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, true);
+void chassis_move(double distance, double velocity){
+  double rotation = distance / wheelCircumference; //takes distance in inches and converts to wheel rotations
+  
+  ChassisLF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
+  ChassisLB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
+  ChassisRF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
+  ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, true);
 }
 
 void chassis_move_auton(double rotation, int velocity){
@@ -344,6 +377,8 @@ void chassis_move_auton(double rotation, int velocity){
 }
 
 void leftSpin(double velocity) {
+  ChassisLF.setStopping(vex::brakeType::coast);
+  ChassisLB.setStopping(vex::brakeType::coast);
   ChassisLF.setVelocity(velocity,velocityUnits::rpm);
   ChassisLB.setVelocity(velocity,velocityUnits::rpm);
   
@@ -352,6 +387,8 @@ void leftSpin(double velocity) {
 }
 
 void rightSpin(double velocity) {
+  ChassisRF.setStopping(vex::brakeType::coast);
+  ChassisRB.setStopping(vex::brakeType::coast);
   ChassisRF.setVelocity(velocity,velocityUnits::rpm);
   ChassisRB.setVelocity(velocity,velocityUnits::rpm);
   
@@ -359,16 +396,21 @@ void rightSpin(double velocity) {
   ChassisRB.spin(vex::directionType::fwd);
 }
 
-void turn(double rotation, int velocity) {
-    ChassisLF.setVelocity(velocity,velocityUnits::rpm);
-    ChassisLB.setVelocity(velocity,velocityUnits::rpm);
-    ChassisRF.setVelocity(velocity,velocityUnits::rpm);
-    ChassisRB.setVelocity(velocity,velocityUnits::rpm);
-    
-    ChassisLF.rotateFor(rotation,rotationUnits::rev,false);
-    ChassisLB.rotateFor(rotation,rotationUnits::rev,false);
-    ChassisRF.rotateFor(-rotation,rotationUnits::rev,false);
-    ChassisRB.rotateFor(-rotation,rotationUnits::rev,false);
+void turn(double degrees, int velocity) {
+  double inches = (2*pi*turningRadius*degrees)/360; // simplifies to pi*turningRadius*degrees/180
+  //inches = inches/2; //because for point turn, left and right side move, so you don't want to run it twice
+  double rotation = inches/wheelCircumference;
+
+
+  ChassisLF.setVelocity(velocity,velocityUnits::rpm);
+  ChassisLB.setVelocity(velocity,velocityUnits::rpm);
+  ChassisRF.setVelocity(velocity,velocityUnits::rpm);
+  ChassisRB.setVelocity(velocity,velocityUnits::rpm);
+  
+  ChassisLF.rotateFor(rotation,rotationUnits::rev,false);
+  ChassisLB.rotateFor(rotation,rotationUnits::rev,false);
+  ChassisRF.rotateFor(-rotation,rotationUnits::rev,false);
+  ChassisRB.rotateFor(-rotation,rotationUnits::rev,true);
 }
 
 void chassisStop () {
@@ -378,32 +420,6 @@ void chassisStop () {
   ChassisRB.stop(brakeType::brake); 
 }
 
-//point turn the chassis by all four motors at velocity, positive is clockwise
-void chassisSmallPointTurn (double degree, double velocity) {
-  float tick = degree2Tick(degree);
-  ChassisLF.setVelocity(velocity,velocityUnits::rpm);
-  ChassisLB.setVelocity(velocity,velocityUnits::rpm);
-  ChassisRF.setVelocity(velocity,velocityUnits::rpm);
-  ChassisRB.setVelocity(velocity,velocityUnits::rpm);
-
-  ChassisLF.rotateFor(tick, rotationUnits::raw, false);
-  ChassisLB.rotateFor(tick, rotationUnits::raw, false);
-  ChassisRF.rotateFor(-tick, rotationUnits::raw, false);
-  ChassisRB.rotateFor(-tick, rotationUnits::raw, true);   
-}
-//positive is clockwise
-void chassisPointTurn(double velocity) {
-    
-  ChassisLF.setVelocity(velocity,velocityUnits::rpm);
-  ChassisLB.setVelocity(velocity,velocityUnits::rpm);
-  ChassisRF.setVelocity(-velocity,velocityUnits::rpm);
-  ChassisRB.setVelocity(-velocity,velocityUnits::rpm);
-  
-  ChassisLF.spin(directionType::fwd);
-  ChassisLB.spin(directionType::fwd);
-  ChassisRF.spin(directionType::fwd);
-  ChassisRB.spin(directionType::fwd);  
-}
 
 //Chassis encoder reset
 void chassisEncoderReset() {
@@ -427,24 +443,24 @@ void slowMode() {
 /*------------------------------------PID Control Move and Turn----------------------------------------*/
 
 void setChassisLSmooth(int speed){
-  double inertia = 0.5;
+  double inertia = 0.5; // was 0.5
   static int currentSpeed = 0;
   currentSpeed = inertia * currentSpeed + (1 - inertia) * speed;
   leftSpin(currentSpeed);
 }
 
 void setChassisRSmooth(int speed){
-   double inertia = 0.5;
+   double inertia = 0.5; // was 0.5
    static int currentSpeed = 0;
    currentSpeed = inertia * currentSpeed + (1 - inertia) * speed;
    rightSpin(currentSpeed);
  }
  
- double kP = 1;
- double kD = 1;
+ double kP = 1; //was 1
+ double kD = 0.5; //was 1 , 0.5
  
  void chassisPIDMove(double inches){
-   double revolutions = inches / (4*pi);//wheel circumference
+   double revolutions = inches / (4*pi);//wheel circumference. Assumes radius of 2 in.
    double degrees = revolutions * 360;//How many degrees the wheels need to turn
  
    double mtrDegrees = (degrees * 6) / 5;//How many degrees the motors need to spin
@@ -492,32 +508,33 @@ void setChassisRSmooth(int speed){
      lastErrorL = errorL;
      lastErrorR = errorR;
  
-     powerL = Limit((proportionalL + derivativeL) * 0.7,-100,100);
-     powerR = Limit((proportionalR + derivativeR) * 0.7,-100,100);
+     powerL = Limit((proportionalL + derivativeL) * 0.7,-200,200);
+     powerR = Limit((proportionalR + derivativeR) * 0.7,-200,200);
  
-     setChassisLSmooth(powerL);
-     setChassisRSmooth(powerR);
+     setChassisLSmooth(powerL*3);
+     setChassisRSmooth(powerR*3);
      
+     vex::task::sleep(20);
    }
  }
 
 //-----------------------------------------------------------
 //Button Methods
-void upPressed() {
+void upPressed() { //make stack vertical
   autonRecord.push_back( "upPressed();");
   stackCurrentPos = StackMotor.rotation(rotationUnits::deg);
   if(stackInStart == true) {
-    StackMotor.setVelocity(20, velocityUnits::pct);
+    StackMotor.setVelocity(40, velocityUnits::pct); //was 20 pct
     StackMotor.rotateTo(stackUnloadPos, rotationUnits::deg);
     StackMotor.stop(hold);
     stackCurrentPos = StackMotor.rotation(rotationUnits::deg);
     stackInStart = false;
     stackInUnload = true;
-    LeftGrabber.spin(directionType::fwd, 10, velocityUnits::pct);
-    RightGrabber.spin(directionType::fwd, 10, velocityUnits::pct);
-    vex::task::sleep(1000);
+    /*LeftGrabber.spin(directionType::fwd, 5, velocityUnits::pct);
+    RightGrabber.spin(directionType::fwd, 5, velocityUnits::pct);
+    vex::task::sleep(1500);
     LeftGrabber.stop(hold);
-    RightGrabber.stop(hold);
+    RightGrabber.stop(hold);*/
 
     return;
   }
@@ -526,7 +543,7 @@ void upPressed() {
   }
 }
 
-void downPressed() {
+void downPressed() { //bring stack down to loading position
   autonRecord.push_back( "downPressed();");
   stackCurrentPos = StackMotor.rotation(rotationUnits::deg);
   if(stackInUnload == true) {
@@ -544,7 +561,7 @@ void downPressed() {
   
 }
 
-void leftPressed() {
+void leftPressed() { //for more than seven cubes. not used
   autonRecord.push_back( "leftPressed();");
   stackCurrentPos = StackMotor.rotation(rotationUnits::deg);
   if(stackInStart == true) {
@@ -561,11 +578,11 @@ void leftPressed() {
   }
 }
 
-void rightPressed() {
+void rightPressed() { //slow outtake
   autonRecord.push_back( "rightPressed();");
   if(RevGrabberStop) {
-    LeftGrabber.spin(directionType::fwd, 15, velocityUnits::pct);
-    RightGrabber.spin(directionType::fwd, 15, velocityUnits::pct);  
+    LeftGrabber.spin(directionType::fwd, 25, velocityUnits::pct); //was 15 pct
+    RightGrabber.spin(directionType::fwd, 25, velocityUnits::pct);  //was 15 pct
     Controller1.Screen.clearScreen();
     Controller1.Screen.setCursor(1,1);
     Controller1.Screen.print("SLOW OUTTAKE ON"); 
@@ -589,7 +606,7 @@ void xPressed() { //outtake macro
   downPressed();
   rightPressed();
   //chassisPIDMove(-12, 6, .7);;
-  chassisPIDMove(-8);
+  chassis_move(-6, 15);
   rightPressed();
 }
 void yPressed(){
@@ -605,7 +622,7 @@ void bPressed() {
   autonomous();
 }
 
-void l1Pressed(){
+void l1Pressed(){ //spin rollers
   autonRecord.push_back( "l1Pressed();");
   if(FwdGrabberStop) {
     LeftGrabber.spin(directionType::rev, 75, velocityUnits::pct);
@@ -621,7 +638,7 @@ void l1Pressed(){
   
 }
 
-void l2Pressed(){
+void l2Pressed(){ //outtake rollers
   autonRecord.push_back( "l2Pressed();");
   if(RevGrabberStop) {
     LeftGrabber.spin(directionType::fwd, 75, velocityUnits::pct);
@@ -637,7 +654,7 @@ void l2Pressed(){
   
 }
 
-void r1Pressed(){
+void r1Pressed(){ //bring grabber to tower positions
   autonRecord.push_back( "r1Pressed();");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
   if(grabberAtBottom == true) {
@@ -662,7 +679,7 @@ void r1Pressed(){
   }
 }
 
-void r1PressedAuton(double extra){
+void r1PressedAuton(double extra){ //brings grabbers up extra for flipout
   autonRecord.push_back( "r1PressedAuton(extra);");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
   if(grabberAtBottom == true) {
@@ -687,7 +704,7 @@ void r1PressedAuton(double extra){
   }
 }
 
-void r2Pressed(){
+void r2Pressed(){ //brings grabbers down
   autonRecord.push_back( "r2Pressed();");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
   if(grabberAtMid == true) {
@@ -777,9 +794,9 @@ int main() {
     Controller1.Axis3.changed(*chassisControl);
 
     //Prevent main from exiting with an infinite loop.                        
-    while(1) {
-      chassisControl();
+    //while(1) {
+      //chassisControl();
       
-      vex::task::sleep(100);//Sleep the task for a short amount of time to prevent wasted resources.
-    }
+      //vex::task::sleep(100);//Sleep the task for a short amount of time to prevent wasted resources.
+    //}
 }

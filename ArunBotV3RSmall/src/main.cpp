@@ -89,6 +89,8 @@ double Limit(double val, double max, double min);
 void chassisPIDMove (double inches);
 void chassis_move_coast(double rotation, int velocity);
 void chassis_move(double distance,double velocity);
+void chassis_move_non_blocking(double distance,double velocity);
+
 void chassis_move_for(double rotation, int velocity);
 void chassis_move_auton(double rotation, int velocity);
 void turn(double degrees,int velocity);
@@ -248,38 +250,26 @@ void flipOut(void) {
   return;
 }
 
-void fourCubes(void) {
-  
-  chassisPIDMove(-10);//pick up the four cubes
-  vex::task::sleep(1000);
-  chassisPIDMove(20);
-  
+void fiveCubes(void) {
+  chassis_move(39, 40); //distance was 35
+  rightPressed();
+  vex::task::sleep(430); //was 450
+  rightPressed();
+  vex::task::sleep(60);
+  //chassis_move(-10, 20);
+  turn(145, 30); //was 147
+  chassis_move(38, 40);
+  upPressed();
+  if(stackInUnload) {
+    vex::task::sleep(250);
+    chassis_move_non_blocking(-6, 40);
+    downPressed();
+  }
 }
 void autonomous( void ) {
-    //flipOut(); //always flip out before auton
-    //chassisPIDMove(8*pi);
-    //fourCubes();
+    flipOut(); //always flip out before auton
+    fiveCubes();
     //backAuton();
-    l1Pressed();
-    chassis_move(39, 40); //distance was 35
-    rightPressed();
-    vex::task::sleep(470); //was 500
-    rightPressed();
-    vex::task::sleep(60);
-    //chassis_move(-10, 20);
-    turn(-145, 30); //was -147
-    chassis_move(38, 40);
-    upPressed();
-    if(stackInUnload) {
-      xPressed();
-    }
-    /*
-    leftSpin(75);
-    rightSpin(75);
-    vex::task::sleep(1000);
-        leftSpin(0);
-    rightSpin(0);
-    */
     //smallSideAuton();
     //backupAuton();
 }
@@ -357,6 +347,15 @@ void chassis_move(double distance, double velocity){
   ChassisLB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
   ChassisRF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
   ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, true);
+}
+
+void chassis_move_non_blocking(double distance, double velocity){
+  double rotation = distance / wheelCircumference; //takes distance in inches and converts to wheel rotations
+  
+  ChassisLF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
+  ChassisLB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
+  ChassisRF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
+  ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, false);
 }
 
 void chassis_move_auton(double rotation, int velocity){

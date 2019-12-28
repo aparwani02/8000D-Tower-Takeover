@@ -54,7 +54,6 @@ int rollerTiltCheck = 1;
 const int encoderTicksPerRev = 900;
 const int chassisWheelDia = 4; //4in chassis  wheel
 const float ticksPerTurn = 3000; //tbd value through testing
-const float chassisTurningRadius = 6.67; //nearest wheel to the center of the robot, need to be tuned
 const int maxMotorRPM = 200;
 
 const int wheelRadius = 2; //in inches
@@ -89,7 +88,7 @@ double Limit(double val, double max, double min);
 void chassisPIDMove (double inches);
 void chassis_move_coast(double rotation, int velocity);
 void chassis_move(double distance,double velocity);
-void chassis_move_non_blocking(double distance,double velocity);
+bool chassis_move_non_blocking(double distance,double velocity);
 
 void chassis_move_for(double rotation, int velocity);
 void chassis_move_auton(double rotation, int velocity);
@@ -106,10 +105,12 @@ void rightSpin(double velocity);
 // 
 // //CALLBACKS:
 void l1Pressed();
+void l1PressedAuton();
 void l2Pressed();
 void r1Pressed();
-void r1PressedAuton(double extra);
+void r1PressedAuton();
 void r2Pressed();
+void r2PressedAuton();
 void l1PressedTest();
 void l2PressedTest();
 void r1PressedTest();
@@ -168,7 +169,7 @@ int degree2Tick (float degree) {//need to measure based on robot
 //this function is based on wheel travel trajectory during a turn
 //need fine tune of turningRadius to get correct angle conversion
 int degree2Tick_2 (float degree) {
-  float turningCirc = 2 * pi * chassisTurningRadius;
+  float turningCirc = 2 * pi * turningRadius;
   double ticksPerTurn = inch2Tick(turningCirc);
   int ticks = degree * ticksPerTurn/360;
   return ticks; 
@@ -236,35 +237,48 @@ void backAuton(void){
 }
 
 void flipOut(void) {
-  r1Pressed();
+  r1PressedAuton();
   l2Pressed();
-  r1Pressed();
-  //r1PressedAuton(20);
-  //r1Pressed();
-  vex::task::sleep(500);
-  r2Pressed();
-  l1Pressed();
-  r2Pressed();
+  vex::task::sleep(250);
+  r2PressedAuton();
+  l2PressedTest();
+  chassis_move_non_blocking(-3, 25);
+  l1PressedAuton();
   //r2Pressed();
   //chassisPIDMove(24);
   return;
 }
 
 void fiveCubes(void) {
-  chassis_move(39, 40); //distance was 35
-  rightPressed();
-  vex::task::sleep(430); //was 450
-  rightPressed();
-  vex::task::sleep(60);
+  /*chassis_move(41, 40); //distance was 39
+  //chassisPIDMove(41);
+  vex::task::sleep(150);
+  l1Pressed();
   //chassis_move(-10, 20);
-  turn(-145, 30); //was -147
-  chassis_move(38, 40);
+  turn(-145, 65); //was -145
+  chassis_move(36, 40); //was 37
   upPressed();
   if(stackInUnload) {
     vex::task::sleep(250);
-    chassis_move_non_blocking(-6, 40);
-    downPressed();
+    xPressed();
+  }*/
+
+  chassis_move(41, 40); //distance was 39
+  //chassisPIDMove(41);
+  vex::task::sleep(150);
+  l1Pressed();
+  chassis_move(-18, 40);
+  vex:task::sleep(2000);
+  turn(-135, 65); //was -145
+  vex::task::sleep(5000);
+  chassis_move(19, 40); //was 37
+  return;
+  upPressed();
+  if(stackInUnload) {
+    vex::task::sleep(250);
+    xPressed();
   }
+
 }
 void autonomous( void ) {
     flipOut(); //always flip out before auton
@@ -345,18 +359,23 @@ void chassis_move(double distance, double velocity){
   double rotation = distance / wheelCircumference; //takes distance in inches and converts to wheel rotations
   
   ChassisLF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
-  ChassisLB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
+  ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
   ChassisRF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
-  ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, true);
+  ChassisLB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, true);
 }
 
-void chassis_move_non_blocking(double distance, double velocity){
+bool chassis_move_non_blocking(double distance, double velocity){
+  bool completed = false;
+
   double rotation = distance / wheelCircumference; //takes distance in inches and converts to wheel rotations
   
   ChassisLF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
-  ChassisLB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
+  ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
   ChassisRF.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct,false);
-  ChassisRB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, false);
+  ChassisLB.rotateFor(rotation,rotationUnits::rev,velocity, velocityUnits::pct, false);
+
+  completed = true;
+  return completed;
 }
 
 void chassis_move_auton(double rotation, int velocity){
@@ -370,7 +389,7 @@ void chassis_move_auton(double rotation, int velocity){
     ChassisRF.setStopping(vex::brakeType::brake);
     ChassisRB.setStopping(vex::brakeType::brake);
     
-//     ChassisLF.rotateFor(rotation,rotationUnits::rev,false);
+    ChassisLF.rotateFor(rotation,rotationUnits::rev,false);
     ChassisLB.rotateFor(rotation,rotationUnits::rev,false);
     ChassisRF.rotateFor(rotation,rotationUnits::rev,false);
     ChassisRB.rotateFor(rotation,rotationUnits::rev);
@@ -456,14 +475,14 @@ void setChassisRSmooth(int speed){
    rightSpin(currentSpeed);
  }
  
- double kP = 1; //was 1
- double kD = 0.5; //was 1 , 0.5
+ double kP = 0.8; //was 1
+ double kD = 0; //was 1 , 0.5
  
  void chassisPIDMove(double inches){
    double revolutions = inches / (4*pi);//wheel circumference. Assumes radius of 2 in.
    double degrees = revolutions * 360;//How many degrees the wheels need to turn
  
-   double mtrDegrees = (degrees * 6) / 5;//How many degrees the motors need to spin
+   //double mtrDegrees = (degrees * 6) / 5;//How many degrees the motors need to spin
  
    ChassisLF.resetRotation();
    ChassisRF.resetRotation();
@@ -471,8 +490,8 @@ void setChassisRSmooth(int speed){
    double distanceL = ChassisLF.rotation(rotationUnits::deg);
    double distanceR = ChassisRF.rotation(rotationUnits::deg);
  
-   double errorL = mtrDegrees - distanceR;
-   double errorR = mtrDegrees - distanceR;
+   double errorL = degrees - distanceL;
+   double errorR = degrees - distanceL;
  
    double lastErrorL = errorL;
    double lastErrorR = errorR;
@@ -493,8 +512,8 @@ void setChassisRSmooth(int speed){
      distanceL = ChassisLF.rotation(rotationUnits::deg);
      distanceR = ChassisRF.rotation(rotationUnits::deg);
  
-     errorL = mtrDegrees - distanceR;
-     errorR = mtrDegrees - distanceR;
+     errorL = degrees - distanceL;
+     errorR = degrees - distanceL;
  
      proportionalL = errorL * kP;
      proportionalR = errorR * kP;
@@ -511,11 +530,14 @@ void setChassisRSmooth(int speed){
      powerL = Limit((proportionalL + derivativeL) * 0.7,-200,200);
      powerR = Limit((proportionalR + derivativeR) * 0.7,-200,200);
  
-     setChassisLSmooth(powerL*3);
-     setChassisRSmooth(powerR*3);
+     setChassisLSmooth(powerL);
+     setChassisRSmooth(powerR);
      
      vex::task::sleep(20);
    }
+
+   leftSpin(0);
+   rightSpin(0);
  }
 
 //-----------------------------------------------------------
@@ -525,8 +547,12 @@ void upPressed() { //make stack vertical
   stackCurrentPos = StackMotor.rotation(rotationUnits::deg);
   if(stackInStart == true) {
     StackMotor.setVelocity(40, velocityUnits::pct); //was 20 pct
+    LeftGrabber.spin(directionType::fwd, 3, velocityUnits::pct);
+    RightGrabber.spin(directionType::fwd, 3, velocityUnits::pct);
     StackMotor.rotateTo(stackUnloadPos, rotationUnits::deg);
     StackMotor.stop(hold);
+    LeftGrabber.stop(hold);
+    RightGrabber.stop(hold);
     stackCurrentPos = StackMotor.rotation(rotationUnits::deg);
     stackInStart = false;
     stackInUnload = true;
@@ -602,12 +628,15 @@ void rightPressed() { //slow outtake
 }
 
 void xPressed() { //outtake macro
-  autonRecord.push_back( "xPressed();");
+  /*autonRecord.push_back( "xPressed();");
   downPressed();
   rightPressed();
   //chassisPIDMove(-12, 6, .7);;
-  chassis_move(-6, 15);
+  chassis_move(-6, 15);*/
   rightPressed();
+  autonRecord.push_back( "xPressed();");
+  chassis_move_non_blocking(-12, 15);
+  downPressed();
 }
 void yPressed(){
   autonRecord.push_back( "yPressed();");
@@ -623,6 +652,10 @@ void bPressed() {
 }
 
 void l1Pressed(){ //spin rollers
+  Controller1.Screen.clearScreen();
+  Controller1.Screen.setCursor(1,1);
+  Controller1.Screen.print("SLOW OUTTAKE OFF");  
+  outtakeOn = false;
   autonRecord.push_back( "l1Pressed();");
   if(FwdGrabberStop) {
     LeftGrabber.spin(directionType::rev, 75, velocityUnits::pct);
@@ -638,7 +671,31 @@ void l1Pressed(){ //spin rollers
   
 }
 
+void l1PressedAuton(){ //spin rollers
+  Controller1.Screen.clearScreen();
+  Controller1.Screen.setCursor(1,1);
+  Controller1.Screen.print("SLOW OUTTAKE OFF");  
+  outtakeOn = false;
+  autonRecord.push_back( "l1Pressed();");
+  if(FwdGrabberStop) {
+    LeftGrabber.spin(directionType::rev, 90, velocityUnits::pct);
+    RightGrabber.spin(directionType::rev, 90, velocityUnits::pct);
+    FwdGrabberStop = false;
+    RevGrabberStop = true;
+  }
+  else {
+    LeftGrabber.stop(brakeType::hold);
+    RightGrabber.stop(brakeType::hold);
+    FwdGrabberStop = true;
+  }
+  
+}
+
 void l2Pressed(){ //outtake rollers
+  Controller1.Screen.clearScreen();
+  Controller1.Screen.setCursor(1,1);
+  Controller1.Screen.print("SLOW OUTTAKE OFF");  
+  outtakeOn = false;
   autonRecord.push_back( "l2Pressed();");
   if(RevGrabberStop) {
     LeftGrabber.spin(directionType::fwd, 75, velocityUnits::pct);
@@ -679,25 +736,17 @@ void r1Pressed(){ //bring grabber to tower positions
   }
 }
 
-void r1PressedAuton(double extra){ //brings grabbers up extra for flipout
+void r1PressedAuton(){ //brings grabbers up extra for flipout
   autonRecord.push_back( "r1PressedAuton(extra);");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
   if(grabberAtBottom == true) {
     GrabberLift.setVelocity(75, velocityUnits::pct);
-    GrabberLift.rotateTo(lowTowerPos, rotationUnits::deg);
+    GrabberLift.rotateTo(midTowerPos, rotationUnits::deg);
     GrabberLift.stop(hold);
     grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
     grabberAtBottom = false;
-    grabberAtLow = true;
-    return;
-  }
-  else if(grabberAtLow == true) {
-    GrabberLift.setVelocity(75, velocityUnits::pct);
-    GrabberLift.rotateTo(midTowerPos + extra, rotationUnits::deg);
-    GrabberLift.stop(hold);
-    grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
-    grabberAtLow = false;
     grabberAtMid = true;
+    return;
   }
   else { //FILL IN ELSE CASE NOW BEFORE YOU DO ANYTHING ELSE
     return;
@@ -723,6 +772,23 @@ void r2Pressed(){ //brings grabbers down
     grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
     grabberAtLow = false;
     grabberAtBottom = true;
+  }
+  else { //FILL IN ELSE CASE NOW BEFORE YOU DO ANYTHING ELSE
+    return;
+  }
+}
+
+void r2PressedAuton(){ //brings grabbers up extra for flipout
+  autonRecord.push_back( "r1PressedAuton(extra);");
+  grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
+  if(grabberAtMid == true) {
+    GrabberLift.setVelocity(75, velocityUnits::pct);
+    GrabberLift.rotateTo(bottomPos, rotationUnits::deg);
+    GrabberLift.stop(hold);
+    grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
+    grabberAtMid = false;
+    grabberAtBottom = true;
+    return;
   }
   else { //FILL IN ELSE CASE NOW BEFORE YOU DO ANYTHING ELSE
     return;

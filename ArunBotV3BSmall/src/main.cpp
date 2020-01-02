@@ -250,21 +250,29 @@ void flipOut(void) {
 }
 
 void fiveCubes(void) {
-  chassis_move(41, 40); //distance was 39
+  /*chassis_move(41, 45); //distance was 39 // speed was 40
   //chassisPIDMove(41);
   vex::task::sleep(150);
   l1Pressed();
   //chassis_move(-10, 20);
   turn(-145, 65); //was -145
-  chassis_move(36, 40); //was 37
+  //chassis_move(36, 50); //distance was 37 // speed was 40
+  double totalDistance = 0;
+  double currentSpeed = 80;
+  while(totalDistance <= 36) {
+      chassis_move(3.6, currentSpeed);
+      currentSpeed -= 5;
+      totalDistance += 3.6;
+  }
   upPressed();
   if(stackInUnload) {
     vex::task::sleep(250);
     xPressed();
-  }
+  }*/
 
-  /*chassis_move(41, 40); //distance was 39
-  //chassisPIDMove(41);
+  //chassis_move(41, 40); //distance was 39
+  //chassis_move(5,40);
+  chassisPIDMove(41);
   vex::task::sleep(150);
   l1Pressed();
   chassis_move(-18, 40);
@@ -277,7 +285,7 @@ void fiveCubes(void) {
   if(stackInUnload) {
     vex::task::sleep(250);
     xPressed();
-  }*/
+  }
 
 }
 void autonomous( void ) {
@@ -462,21 +470,21 @@ void slowMode() {
 /*------------------------------------PID Control Move and Turn----------------------------------------*/
 
 void setChassisLSmooth(int speed){
-  double inertia = 0.5; // was 0.5
+  double inertia = 0.97; // was 0.5
   static int currentSpeed = 0;
   currentSpeed = inertia * currentSpeed + (1 - inertia) * speed;
   leftSpin(currentSpeed);
 }
 
 void setChassisRSmooth(int speed){
-   double inertia = 0.5; // was 0.5
+   double inertia = 0.97; // was 0.5
    static int currentSpeed = 0;
    currentSpeed = inertia * currentSpeed + (1 - inertia) * speed;
    rightSpin(currentSpeed);
  }
  
  double kP = 0.8; //was 1
- double kD = 0; //was 1 , 0.5
+ double kD = 1; //was 1 , 0.5
  
  void chassisPIDMove(double inches){
    double revolutions = inches / (4*pi);//wheel circumference. Assumes radius of 2 in.
@@ -526,14 +534,15 @@ void setChassisRSmooth(int speed){
  
      lastErrorL = errorL;
      lastErrorR = errorR;
- 
-     powerL = Limit((proportionalL + derivativeL) * 0.7,-200,200);
-     powerR = Limit((proportionalR + derivativeR) * 0.7,-200,200);
+
+      
+     powerL = Limit((proportionalL + derivativeL) * 0.6,-160,160);
+     powerR = Limit((proportionalR + derivativeR) * 0.6,-160,160);
  
      setChassisLSmooth(powerL);
      setChassisRSmooth(powerR);
      
-     vex::task::sleep(20);
+     vex::task::sleep(10);
    }
 
    leftSpin(0);

@@ -250,7 +250,7 @@ void flipOut(void) {
 }
 
 void fiveCubes(void) {
-  /*chassis_move(41, 40); //distance was 39
+  chassis_move(41, 40); //distance was 39
   //chassisPIDMove(41);
   vex::task::sleep(150);
   l1Pressed();
@@ -261,9 +261,9 @@ void fiveCubes(void) {
   if(stackInUnload) {
     vex::task::sleep(250);
     xPressed();
-  }*/
+  }
 
-  chassis_move(41, 40); //distance was 39
+  /*chassis_move(41, 40); //distance was 39
   //chassisPIDMove(41);
   vex::task::sleep(150);
   l1Pressed();
@@ -277,7 +277,7 @@ void fiveCubes(void) {
   if(stackInUnload) {
     vex::task::sleep(250);
     xPressed();
-  }
+  }*/
 
 }
 void autonomous( void ) {

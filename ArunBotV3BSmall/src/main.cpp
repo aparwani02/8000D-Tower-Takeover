@@ -272,15 +272,14 @@ void fiveCubes(void) {
 
   //chassis_move(41, 40); //distance was 39
   //chassis_move(5,40);
-  chassisPIDMove(41);
-  vex::task::sleep(150);
+  chassisPIDMove(49);
+  //vex::task::sleep(150);
   l1Pressed();
-  chassis_move(-18, 40);
-  vex:task::sleep(2000);
-  turn(-135, 65); //was -145
-  vex::task::sleep(5000);
-  chassis_move(19, 40); //was 37
-  return;
+  //chassis_move(-18, 40);
+  //vex:task::sleep(2000);
+  turn(-155, 65); //was -135
+  //vex::task::sleep(5000);
+  chassisPIDMove(40); //was 37 //was regular move 40
   upPressed();
   if(stackInUnload) {
     vex::task::sleep(250);

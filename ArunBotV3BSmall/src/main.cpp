@@ -86,6 +86,7 @@ double Limit(double val, double max, double min);
 
 //CHASSIS SETTERS:
 void chassisPIDMove (double inches);
+void chassisPIDMoveMax(double inches, double maxSpeed);
 void chassis_move_coast(double rotation, int velocity);
 void chassis_move(double distance,double velocity);
 bool chassis_move_non_blocking(double distance,double velocity);
@@ -272,14 +273,14 @@ void fiveCubes(void) {
 
   //chassis_move(41, 40); //distance was 39
   //chassis_move(5,40);
-  chassisPIDMove(45);
+  chassisPIDMoveMax(40, 120);
   //vex::task::sleep(150);
   l1PressedAuton(); //was regular l1pressed
   //chassis_move(-18, 40);
   //vex:task::sleep(2000);
-  turn(-155, 65); //was -135
+  turn(-150, 65); //was -135 //was 155
   //vex::task::sleep(5000);
-  chassisPIDMove(40); //was 37 //was regular move 40
+  chassisPIDMove(45); //was 37 //was regular move 40
   upPressed();
   if(stackInUnload) {
     vex::task::sleep(250);
@@ -288,13 +289,13 @@ void fiveCubes(void) {
 
 }
 void fiveCubesEXPERIMENTAL(void) {
-  chassisPIDMove(48);
+  chassisPIDMoveMax(40, 120);
   l1PressedAuton();
   //vex::task::sleep(500);
-  chassisPIDMove(-33);
-  turn(-145, 65);
-  vex::task::sleep(150;)
-  chassisPIDMove(23);
+  chassisPIDMove(-25);
+  turn(-140, 65);
+  vex::task::sleep(150);
+  chassisPIDMoveMax(21, 130);
   upPressed();
   if(stackInUnload) {
     vex::task::sleep(250);
@@ -491,15 +492,78 @@ void setChassisLSmooth(int speed){
 }
 
 void setChassisRSmooth(int speed){
-   double inertia = 0.97; // was 0.5
-   static int currentSpeed = 0;
-   currentSpeed = inertia * currentSpeed + (1 - inertia) * speed;
-   rightSpin(currentSpeed);
+  double inertia = 0.97; // was 0.5
+  static int currentSpeed = 0;
+  currentSpeed = inertia * currentSpeed + (1 - inertia) * speed;
+  rightSpin(currentSpeed);
+}
+ 
+double kP = 0.8; //was 1
+double kD = 1; //was 1 , 0.5
+
+void chassisPIDMoveMax(double inches, double maxSpeed){
+   double revolutions = inches / (4*pi);//wheel circumference. Assumes radius of 2 in.
+   double degrees = revolutions * 360;//How many degrees the wheels need to turn
+ 
+   //double mtrDegrees = (degrees * 6) / 5;//How many degrees the motors need to spin
+ 
+   ChassisLF.resetRotation();
+   ChassisRF.resetRotation();
+ 
+   double distanceL = ChassisLF.rotation(rotationUnits::deg);
+   double distanceR = ChassisRF.rotation(rotationUnits::deg);
+ 
+   double errorL = degrees - distanceL;
+   double errorR = degrees - distanceL;
+ 
+   double lastErrorL = errorL;
+   double lastErrorR = errorR;
+ 
+   double proportionalL;
+   double proportionalR;
+ 
+   double speedL;
+   double speedR;
+ 
+   double derivativeL;
+   double derivativeR;
+ 
+   double powerL;
+   double powerR;
+ 
+   while(std::abs(errorL) > 20 || std::abs(errorR) > 20) {
+     distanceL = ChassisLF.rotation(rotationUnits::deg);
+     distanceR = ChassisRF.rotation(rotationUnits::deg);
+ 
+     errorL = degrees - distanceL;
+     errorR = degrees - distanceL;
+ 
+     proportionalL = errorL * kP;
+     proportionalR = errorR * kP;
+ 
+     speedL = lastErrorL - errorL;
+     speedR = lastErrorR - errorR;
+ 
+     derivativeL = -speedL * kD;
+     derivativeR = -speedR * kD;
+ 
+     lastErrorL = errorL;
+     lastErrorR = errorR;
+
+      
+     powerL = Limit((proportionalL + derivativeL) * 0.6, maxSpeed * -1 , maxSpeed);
+     powerR = Limit((proportionalR + derivativeR) * 0.6, maxSpeed * -1 , maxSpeed);
+ 
+     setChassisLSmooth(powerL);
+     setChassisRSmooth(powerR);
+     
+     vex::task::sleep(10);
+   }
+
+   leftSpin(0);
+   rightSpin(0);
  }
- 
- double kP = 0.8; //was 1
- double kD = 1; //was 1 , 0.5
- 
+
  void chassisPIDMove(double inches){
    double revolutions = inches / (4*pi);//wheel circumference. Assumes radius of 2 in.
    double degrees = revolutions * 360;//How many degrees the wheels need to turn

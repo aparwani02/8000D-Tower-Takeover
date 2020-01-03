@@ -272,9 +272,9 @@ void fiveCubes(void) {
 
   //chassis_move(41, 40); //distance was 39
   //chassis_move(5,40);
-  chassisPIDMove(49);
+  chassisPIDMove(45);
   //vex::task::sleep(150);
-  l1Pressed();
+  l1PressedAuton(); //was regular l1pressed
   //chassis_move(-18, 40);
   //vex:task::sleep(2000);
   turn(-155, 65); //was -135
@@ -287,10 +287,25 @@ void fiveCubes(void) {
   }
 
 }
+void fiveCubesEXPERIMENTAL(void) {
+  chassisPIDMove(48);
+  l1PressedAuton();
+  //vex::task::sleep(500);
+  chassisPIDMove(-33);
+  turn(-145, 65);
+  vex::task::sleep(150;)
+  chassisPIDMove(23);
+  upPressed();
+  if(stackInUnload) {
+    vex::task::sleep(250);
+    xPressed();
+  }
+}
 void autonomous( void ) {
     flipOut(); //always flip out before auton
     //chassisPIDMove(8*pi);
-    fiveCubes();
+    //fiveCubes();
+    fiveCubesEXPERIMENTAL();
     //backAuton();
     //smallSideAuton();
     //backupAuton();
@@ -676,7 +691,6 @@ void l1Pressed(){ //spin rollers
     RightGrabber.stop(brakeType::hold);
     FwdGrabberStop = true;
   }
-  
 }
 
 void l1PressedAuton(){ //spin rollers
@@ -686,8 +700,8 @@ void l1PressedAuton(){ //spin rollers
   outtakeOn = false;
   autonRecord.push_back( "l1Pressed();");
   if(FwdGrabberStop) {
-    LeftGrabber.spin(directionType::rev, 90, velocityUnits::pct);
-    RightGrabber.spin(directionType::rev, 90, velocityUnits::pct);
+    LeftGrabber.spin(directionType::rev, 100, velocityUnits::pct); //was 90
+    RightGrabber.spin(directionType::rev, 100, velocityUnits::pct);
     FwdGrabberStop = false;
     RevGrabberStop = true;
   }

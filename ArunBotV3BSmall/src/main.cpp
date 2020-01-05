@@ -71,7 +71,7 @@ bool stackInStart = true;
 bool stackInUnload = false;
 
 //Grabber Positioning Values (degrees)
-double bottomPos = 0.00;
+double bottomPos = 5.00;
 double midTowerPos = 560.20;
 double lowTowerPos = 411.20;
 double grabberCurrentPos = 0.00;
@@ -109,7 +109,7 @@ void l1Pressed();
 void l1PressedAuton();
 void l2Pressed();
 void r1Pressed();
-void r1PressedAuton();
+void r1PressedAuton(double extra);
 void r2Pressed();
 void r2PressedAuton();
 void l1PressedTest();
@@ -238,8 +238,15 @@ void backAuton(void){
 }
 
 void flipOut(void) {
-  r1PressedAuton();
+  ChassisLF.setStopping(hold);
+  ChassisRF.setStopping(hold);
+  ChassisLB.setStopping(hold);
+  ChassisRB.setStopping(hold);
   l2Pressed();
+  StackMotor.rotateFor(-4, rotationUnits::deg);
+  StackMotor.resetRotation();
+  r1PressedAuton(10);
+  
   vex::task::sleep(250);
   r2PressedAuton();
   l2PressedTest();
@@ -289,18 +296,21 @@ void fiveCubes(void) {
 
 }
 void fiveCubesEXPERIMENTAL(void) {
-  chassisPIDMoveMax(40, 120);
+  chassisPIDMoveMax(40, 125); //was 120
   l1PressedAuton();
-  //vex::task::sleep(500);
-  chassisPIDMove(-25);
-  turn(-140, 65);
+  vex::task::sleep(500);
+  chassisPIDMoveMax(-20, 100); //was -25
+  vex::task::sleep(500);
+  turn(-130, 40); //was 65
   vex::task::sleep(150);
-  chassisPIDMoveMax(21, 130);
+  chassisPIDMoveMax(20, 130);
   upPressed();
-  if(stackInUnload) {
+  
+  //if(stackInUnload) {
+    //StackMotor.rotateFor(-4, rotationUnits::deg);
     vex::task::sleep(250);
     xPressed();
-  }
+  //}
 }
 void autonomous( void ) {
     flipOut(); //always flip out before auton
@@ -419,8 +429,8 @@ void chassis_move_auton(double rotation, int velocity){
 }
 
 void leftSpin(double velocity) {
-  ChassisLF.setStopping(vex::brakeType::coast);
-  ChassisLB.setStopping(vex::brakeType::coast);
+  ChassisLF.setStopping(vex::brakeType::hold);
+  ChassisLB.setStopping(vex::brakeType::hold);
   ChassisLF.setVelocity(velocity,velocityUnits::rpm);
   ChassisLB.setVelocity(velocity,velocityUnits::rpm);
   
@@ -429,8 +439,8 @@ void leftSpin(double velocity) {
 }
 
 void rightSpin(double velocity) {
-  ChassisRF.setStopping(vex::brakeType::coast);
-  ChassisRB.setStopping(vex::brakeType::coast);
+  ChassisRF.setStopping(vex::brakeType::hold);
+  ChassisRB.setStopping(vex::brakeType::hold);
   ChassisRF.setVelocity(velocity,velocityUnits::rpm);
   ChassisRB.setVelocity(velocity,velocityUnits::rpm);
   
@@ -722,7 +732,7 @@ void xPressed() { //outtake macro
   chassis_move(-6, 15);*/
   rightPressed();
   autonRecord.push_back( "xPressed();");
-  chassis_move_non_blocking(-12, 15);
+  chassis_move_non_blocking(-12, 10);
   downPressed();
 }
 void yPressed(){
@@ -822,12 +832,12 @@ void r1Pressed(){ //bring grabber to tower positions
   }
 }
 
-void r1PressedAuton(){ //brings grabbers up extra for flipout
+void r1PressedAuton(double extra){ //brings grabbers up extra for flipout
   autonRecord.push_back( "r1PressedAuton(extra);");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
   if(grabberAtBottom == true) {
     GrabberLift.setVelocity(75, velocityUnits::pct);
-    GrabberLift.rotateTo(midTowerPos, rotationUnits::deg);
+    GrabberLift.rotateTo(midTowerPos + extra, rotationUnits::deg);
     GrabberLift.stop(hold);
     grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
     grabberAtBottom = false;
@@ -910,6 +920,22 @@ void pre_auton( void ) {
 
 void usercontrol( void ) {
   // User control code here, inside the loop
+ //Callbacks
+    Controller1.ButtonL1.pressed(*l1Pressed);
+    Controller1.ButtonL2.pressed(*l2Pressed);
+    Controller1.ButtonR1.pressed(*r1Pressed);
+    Controller1.ButtonR2.pressed(*r2Pressed);
+    Controller1.ButtonUp.pressed(*upPressed);
+    Controller1.ButtonDown.pressed(*downPressed);
+    Controller1.ButtonLeft.pressed(*leftPressed);
+    Controller1.ButtonRight.pressed(*rightPressed);
+    Controller1.ButtonX.pressed(*xPressed);
+    Controller1.ButtonY.pressed(*yPressed);
+    Controller1.ButtonA.pressed(*aPressed);
+    Controller1.ButtonB.pressed(*bPressed);
+    Controller1.Axis2.changed(*chassisControl);
+    Controller1.Axis3.changed(*chassisControl);
+
   while (1) {
     Brain.Screen.clearScreen();
     Brain.Screen.setCursor(1,1);
@@ -927,23 +953,6 @@ int main() {
     Competition.autonomous(autonomous);
     Competition.drivercontrol(usercontrol);
     pre_auton();
-
-
-    //Callbacks
-    Controller1.ButtonL1.pressed(*l1Pressed);
-    Controller1.ButtonL2.pressed(*l2Pressed);
-    Controller1.ButtonR1.pressed(*r1Pressed);
-    Controller1.ButtonR2.pressed(*r2Pressed);
-    Controller1.ButtonUp.pressed(*upPressed);
-    Controller1.ButtonDown.pressed(*downPressed);
-    Controller1.ButtonLeft.pressed(*leftPressed);
-    Controller1.ButtonRight.pressed(*rightPressed);
-    Controller1.ButtonX.pressed(*xPressed);
-    Controller1.ButtonY.pressed(*yPressed);
-    Controller1.ButtonA.pressed(*aPressed);
-    Controller1.ButtonB.pressed(*bPressed);
-    Controller1.Axis2.changed(*chassisControl);
-    Controller1.Axis3.changed(*chassisControl);
 
     //Prevent main from exiting with an infinite loop.                        
     //while(1) {

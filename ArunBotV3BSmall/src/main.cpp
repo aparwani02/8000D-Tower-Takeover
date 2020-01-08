@@ -330,11 +330,11 @@ void leftDrive(vex::directionType type, int percentage) {
   autonRecord.push_back(str);
 
   if(percentage >= 0) {
-    percentage = 1.2*pow(1.043,percentage) - 1.2 + .2*percentage;
+    percentage = .9*pow(1.043,percentage) - 1 + .4*percentage;
   }
   else {
     percentage = -percentage; // unnecessary?
-    percentage = 1.2*pow(1.043,percentage) - 1.2 + .2*percentage;
+    percentage = .9*pow(1.043,percentage) - 1 + .4*percentage;
     percentage = -percentage;
   }
 
@@ -347,17 +347,18 @@ void rightDrive(vex::directionType type, int percentage) {
   str += ");";
   autonRecord.push_back(str);
   if(percentage >= 0) {
-    percentage = 1.2*pow(1.043,percentage) - 1.2 + .2*percentage;
+    percentage = .9*pow(1.043,percentage) - 1 + .4*percentage;
   }
   else {
     percentage = -percentage; // unnecessary?
-    percentage = 1.2*pow(1.043,percentage) - 1.2 + .2*percentage;
+    percentage = .9*pow(1.043,percentage) - 1 + .4*percentage;
     percentage = -percentage;
   }
 
   ChassisRF.spin(type, percentage, velocityUnits::pct);
   ChassisRB.spin(type, percentage, velocityUnits::pct);
 }
+
 
 void chassis_move_for(double rotation, int velocity){
     ChassisLF.setVelocity(velocity,velocityUnits::rpm);
@@ -811,7 +812,7 @@ void r1Pressed(){ //bring grabber to tower positions
   autonRecord.push_back( "r1Pressed();");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
   if(grabberAtBottom == true) {
-    GrabberLift.setVelocity(75, velocityUnits::pct);
+    GrabberLift.setVelocity(120, velocityUnits::pct);
     GrabberLift.rotateTo(lowTowerPos, rotationUnits::deg);
     GrabberLift.stop(hold);
     grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
@@ -820,7 +821,7 @@ void r1Pressed(){ //bring grabber to tower positions
     return;
   }
   else if(grabberAtLow == true) {
-    GrabberLift.setVelocity(75, velocityUnits::pct);
+    GrabberLift.setVelocity(120, velocityUnits::pct);
     GrabberLift.rotateTo(midTowerPos, rotationUnits::deg);
     GrabberLift.stop(hold);
     grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
@@ -836,7 +837,7 @@ void r1PressedAuton(double extra){ //brings grabbers up extra for flipout
   autonRecord.push_back( "r1PressedAuton(extra);");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
   if(grabberAtBottom == true) {
-    GrabberLift.setVelocity(75, velocityUnits::pct);
+    GrabberLift.setVelocity(120, velocityUnits::pct);
     GrabberLift.rotateTo(midTowerPos + extra, rotationUnits::deg);
     GrabberLift.stop(hold);
     grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
@@ -850,7 +851,7 @@ void r1PressedAuton(double extra){ //brings grabbers up extra for flipout
 }
 
 void r2Pressed(){ //brings grabbers down
-  autonRecord.push_back( "r2Pressed();");
+  /*autonRecord.push_back( "r2Pressed();");
   grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
   if(grabberAtMid == true) {
     GrabberLift.setVelocity(-75, velocityUnits::pct);
@@ -867,6 +868,15 @@ void r2Pressed(){ //brings grabbers down
     GrabberLift.stop(hold);
     grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
     grabberAtLow = false;
+    grabberAtBottom = true;
+  }*/
+  if(grabberAtLow == true || grabberAtMid == true) {
+    GrabberLift.setVelocity(-100, velocityUnits::pct);
+    GrabberLift.rotateTo(bottomPos, rotationUnits::deg);
+    GrabberLift.stop(hold);
+    grabberCurrentPos = GrabberLift.rotation(rotationUnits::deg);
+    grabberAtLow = false;
+    grabberAtMid = false;
     grabberAtBottom = true;
   }
   else { //FILL IN ELSE CASE NOW BEFORE YOU DO ANYTHING ELSE

@@ -34,7 +34,7 @@ vex::motor ChassisLB(vex::PORT2, vex::gearSetting::ratio18_1, false);
 vex::motor ChassisRF(vex::PORT3, vex::gearSetting::ratio18_1, true);
 vex::motor ChassisRB(vex::PORT4, vex::gearSetting::ratio18_1, true);
 //Grabbers
-vex::motor LeftGrabber(vex::PORT7, vex::gearSetting::ratio18_1, true); 
+vex::motor LeftGrabber(vex::PORT9, vex::gearSetting::ratio18_1, true); 
 vex::motor RightGrabber(vex::PORT8, vex::gearSetting::ratio18_1, false); 
 //Misc.
 vex::motor GrabberLift(vex::PORT5, vex::gearSetting::ratio36_1, true); 
@@ -492,7 +492,10 @@ void slowMode() {
     chassisMultiplier = .17;
   }
 }
-
+void tower() {
+  chassis_move(-100, 30);
+  r2Pressed();
+}
 /*------------------------------------PID Control Move and Turn----------------------------------------*/
 
 void setChassisLSmooth(int speed){
@@ -738,6 +741,7 @@ void xPressed() { //outtake macro
 }
 void yPressed(){
   autonRecord.push_back( "yPressed();");
+  tower();
 }
 
 void aPressed() {
